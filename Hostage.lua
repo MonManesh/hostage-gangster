@@ -1,0 +1,107 @@
+-----------------------------------------------------------------------------------------
+--
+-- Hostage.lua
+--
+-----------------------------------------------------------------------------------------
+
+module(..., package.seeall)
+
+
+function new (self,wall , obj)
+       obj = obj or {}   -- create table if user does not provide one
+       setmetatable(obj, self)
+       self.__index = self
+       obj.view = display.newImageRect('h.png',constants.hostageWidth,constants.hostageHeight)
+       obj.died = false
+       obj.addingTimer = timer.performWithDelay( constants.HostageTransitionDownTime,function() Runtime:dispatchEvent( { name = "hostageWasNotShooted" ,  hostage =  obj , thisWall = wall}) end, 1  ) 
+       obj.view.anchorX = 0
+       obj.view.anchorY = 1 
+      -- physics.addBody(obj.view, "static", {density=.1, bounce=0.1, friction=.2})  
+      -- group:insert(obj.view)
+
+       local shootListener = function (event )
+          --   print( obj.createDate )
+          
+            print("!!!!!! hostage shooted !!!!!") 
+              obj:hostageShooted()
+
+             Runtime:dispatchEvent( { name = "hostageShooted" ,  hostage = obj , thisWall = wall })
+
+
+       end
+      if (obj.died == false) then 
+       obj.view:addEventListener("tap" , shootListener ) end
+
+
+      
+       return obj
+end
+
+function isDead( self )
+      if (self.died == true) then return true
+      elseif (self.died==false) then return false end
+             
+      -- body
+end
+
+
+
+function setX(self, xPosition )
+
+       self.view.x = xPosition
+       self.view.x = xPosition
+end
+
+function setY(self, yPosition )
+       self.view.y = yPosition
+end
+function getX( self)
+
+       return self.view.x
+end
+function getY( self )
+       return self.view.y
+end
+function getHostageHeight( self) 
+      return self.view.height
+end  
+function getHostageWidth( self)
+      return self.view.width
+end
+function kill( self )
+      self.died = true
+end
+function hostageShooted( self )
+
+        self:kill() 
+        timer.cancel(self.addingTimer ) 
+        local listener2 = function ()  self.view:removeSelf() self = nil end
+        local hostageDieingTransition =  transition.fadeOut( self.view, {time=400, delay=0 , onComplete = listener2 } )
+end
+function characterTransitionDown( self,wall )
+
+
+       local  wallHeight = wall:getWallHeight() - self:getHostageHeight () + 20
+      -- print("wallHeight="..wallHeight)
+       --print("selfy"..self:getY())
+       local listener1 = function ( )
+                         wall:setWallFront()
+                         end
+       local listener2 = function ()
+                               if (self.died== false) then 
+                                    self.view:removeSelf() self = nil 
+
+                              end
+                        end
+       local hostageTransition = transition.to (self.view,{time=constants.hostTransitionDownDur,transition=easing.inOutSine, delay=constants.hostageTransitionDelay , y = self:getY() + wallHeight ,onStart = listener1  , onComplete = listener2 }) 
+      
+end
+function characterTransitionUp( self , wall)
+       local  wallHeight = wall:getWallHeight()
+       local listener1 = function ( )
+                         wall:setWallFront()
+                         end
+      
+       gangsterTransition = transition.from(self.view,{time=constants.hostTransitionUpDur,transition=easing.inOutSine, delay=100, y = self:getY() + self:getHostageHeight()    , onComplete = listener1 }) 
+
+end 
